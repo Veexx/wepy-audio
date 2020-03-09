@@ -1,0 +1,228 @@
+
+<template lang="wxml" minapp="wepy">
+  <movable-view class="audio-box"  direction="vertical" inertia y="450" wx:if="{{playObj.is_show}}">
+    <view class="progress-bar">
+      <view class="left-audio">
+        <view class="audio-poster" >
+          <image class="{{playObj.is_play?'rotate':''}}"  style="width:100%;height:100%;border-radius:50%;" src="{{playObj.play_poster}}"/>
+          <view class="paly-control">
+                <image class="paly-buoon" @tap="play"  wx:if="{{!playObj.is_play}}" src="../assets/audio-play.svg" />
+                <image class="paly-buoon" @tap="pause"  wx:if="{{playObj.is_play}}" src="../assets/audio-pause.svg" />
+          </view>
+        </view>
+        <text class="audio-title cfff" bindtap="todetail" data-id="{{playObj.id}}">《{{playObj.play_title}}》</text>
+      </view>
+      <view class="right-audio">
+            <text class="progress-now cfff" bindtap="todetail" data-id="{{playObj.id}}">{{playObj.currentTime}}/</text>
+            <text class="progress-now cfff" bindtap="todetail" data-id="{{playObj.id}}">{{playObj.duration}}</text>
+            <image class="close-audio" @tap="closeAudio" src="../assets/closeAudio.svg" />
+      </view>
+    </view>
+  </movable-view>
+</template>
+<script>
+import wepy from 'wepy';
+import util from '@/utils/utils';
+import tip from '@/utils/tip';
+import { connect } from 'wepy-redux'
+import { SETPLAYISPLAY , SETPLAYISSHOW , SETPLAYCURRENTTIME , SETPLAYDURAYTION , SETPLAYPERSENT , SETPLAYTABID } from '../store/types/counter'
+let startPageX = 0;
+const AUDIOMANAGER = wx.getBackgroundAudioManager();
+  @connect({
+    playObj (state) {
+      return state.counter
+    }
+  }, {
+     SETPLAYISPLAY,
+     SETPLAYISSHOW,
+     SETPLAYCURRENTTIME,
+     SETPLAYDURAYTION,
+     SETPLAYPERSENT,
+     SETPLAYTABID
+  })
+export default class Audio extends wepy.component {
+  data = {
+
+  };
+
+
+  methods = {
+    todetail:(e)=>{
+      let that=this;
+      wx.navigateTo({
+          url: '/pages/detail'
+      })        
+
+    },
+    closeAudio:()=>{
+      AUDIOMANAGER.stop();
+      this.methods.SETPLAYISSHOW(false);
+      this.methods.SETPLAYISPLAY(false);
+      this.methods.SETPLAYCURRENTTIME('00:00');
+      this.methods.SETPLAYDURAYTION('00:00');
+    },
+    play: () => {
+      AUDIOMANAGER.play();
+      this.methods.SETPLAYISPLAY(true);
+    },
+    pause() {
+      AUDIOMANAGER.pause();
+      this.methods.SETPLAYISPLAY(false);
+    },
+
+  };
+
+
+  onLoad() {
+    let that=this;
+    AUDIOMANAGER.onWaiting(() => {
+      that.methods.SETPLAYISPLAY(false);
+        tip.loadingVoice();        
+        that.$apply();
+    }); 
+
+    AUDIOMANAGER.onCanplay(() => {
+      that.methods.SETPLAYISPLAY(true);
+        tip.loaded();
+    });     
+    AUDIOMANAGER.onPlay(() => {
+      tip.loaded();
+      that.methods.SETPLAYISPLAY(true);
+      that.methods.SETPLAYISSHOW(true);
+        setTimeout(() => {               
+          AUDIOMANAGER.onTimeUpdate(() => {
+              that.methods.SETPLAYCURRENTTIME(util.sec_to_time(AUDIOMANAGER.currentTime));
+              that.methods.SETPLAYDURAYTION(util.sec_to_time(AUDIOMANAGER.duration));
+              that.methods.SETPLAYPERSENT(Math.round(AUDIOMANAGER.currentTime / AUDIOMANAGER.duration * 10000) / 100);
+          })    
+        }, 500);
+    });
+    AUDIOMANAGER.onPause(() => {
+        that.methods.SETPLAYISPLAY(false);
+    });
+    AUDIOMANAGER.onEnded(() => {
+      that.methods.SETPLAYISSHOW(false);
+      that.methods.SETPLAYISPLAY(false);
+      that.methods.SETPLAYCURRENTTIME('00:00');
+    });
+     AUDIOMANAGER.onStop(() => {
+      that.methods.SETPLAYISSHOW(false);
+      that.methods.SETPLAYISPLAY(false);
+      that.methods.SETPLAYCURRENTTIME('00:00');
+      that.methods.SETPLAYDURAYTION('00:00');
+      that.methods.SETPLAYTABID('');
+    }); 
+    AUDIOMANAGER.onError(() => {
+        tip.error('出错了，稍后再试');
+        that.methods.SETPLAYISPLAY(false);
+        that.methods.SETPLAYCURRENTTIME('00:00');
+    });  
+
+
+  }
+}
+</script>
+<style lang="less">
+.audio-poster {
+  display: block;
+  width: 80rpx;
+  height: 80rpx;
+  padding: 10rpx;
+  margin-left: 10rpx;
+  background: rgba(0, 0, 0, .2);;
+  border-radius: 50%;
+  min-width: 80rpx;
+  position: relative;
+  .paly-control{
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, .4);
+      position: absolute;
+      border-radius:50%; 
+      left: 0;
+      top: 0;
+      image{
+          width: 50rpx;
+          height: 50rpx;
+          position: absolute;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          top:0;
+          margin: auto;
+      }
+  }
+}
+.audio-box {
+  position: fixed;
+  z-index: 11;
+  left: 20rpx;
+  width: 710rpx;
+  bottom: 130rpx;
+  height: 100rpx;
+  background: rgba(0, 0, 0, .4);
+  padding: 10rpx 0;
+  align-items: center;
+  border-radius:60rpx;
+  .progress-bar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        .cfff{
+          color: #fff;
+        }
+        .left-audio{
+            display: flex;
+            align-items: center;
+            line-height: 48rpx;
+            width: 430rpx;
+            min-width: 430rpx;
+            .audio-title {
+                display: block;
+                white-space: nowrap;
+                text-overflow: ellipsis;
+                overflow: hidden;
+                // transform: translate(-50%, -50%);
+                font-size: 30rpx;
+            }
+        }
+        .right-audio{
+            line-height: 48rpx;
+            .close-audio{
+                display: inline-block;
+                vertical-align: middle;
+                width: 50rpx;
+                height: 50rpx;
+                margin:0 20rpx;
+                margin-top: -5rpx;
+                
+            }
+            .progress-now {
+                width: 70rpx;
+                text-align: center;
+                font-size: 30rpx;
+            }
+
+        }
+    } 
+}
+
+	@keyframes rotate{
+    0%{
+        transform: rotate(0);
+      }
+    50%{
+    	transform:rotate(180deg);
+    }
+    100%{
+         transform: rotate(360deg);
+    	}
+	}
+ 
+.rotate{
+
+    transition: 0.5s;
+    // transform-origin: 30px 30px;  
+    animation: rotate 10s linear infinite;  /*开始动画后无限循环，用来控制rotate*/
+}
+</style>

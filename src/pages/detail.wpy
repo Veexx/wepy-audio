@@ -1,0 +1,167 @@
+<template lang="wxml" minapp="wepy">
+      <view class="view-page" style="background:url('https://mp.babyhost.higgses.com/static/manage/images/subtitle_background1.png');background-size: cover;">
+          <image class="playDemo"   data-poster="{{details.img}}"   data-title="{{details.title}}"  data-mp3="{{details.mp3}}"  bindtap="playDemo"  src='../assets/play_recording.png'></image> 
+          <image class="playDemo"   bindtap="pauseDemo" wx:if="{{playObj.is_play }}"  src='../assets/demoPause.png'></image>
+          <view class="control-content" >
+            <view class='slider'>
+              <slider bindchange='sliderChange' bindchanging="changing"  activeColor='#FF6524' block-size="12" value='{{!ismove?playObj.percent:0}}' />
+            </view>
+            <text class="fz28 cff" >{{playObj.currentTime}}/{{playObj.duration}}</text>
+          </view>  
+          </block>             
+      </view>  
+</template>
+<script>
+import wepy from 'wepy';
+import tip from '@/utils/tip';
+import util from '@/utils/utils';
+import { connect } from 'wepy-redux'
+import { SETPLAYURL ,SETPLAYTITLE ,SETPLAYPOSTER , SETPLAYISPLAY  , SETPLAYPERSENT} from '../store/types/counter'
+const AUDIOMANAGER = wx.getBackgroundAudioManager();
+  @connect({
+    playObj (state) {
+      return state.counter
+    }
+  }, {
+     SETPLAYURL,
+     SETPLAYTITLE,
+     SETPLAYPOSTER,
+     SETPLAYISPLAY,
+     SETPLAYPERSENT
+  })
+export default class Detail extends wepy.page{
+  config = {
+    navigationBarTitleText: '详情页',
+  }
+  components = {
+
+  }
+
+  data = {
+    practicestatus:0,//0 未播放 1播放中,
+    ismove:false,
+    details:{
+        img: "https://timgsa.baidu.com/timg?image&quality=80&size=b9999_10000&sec=1583756389434&di=793379f99f771146379f9609be9817cb&imgtype=0&src=http%3A%2F%2Fimg3.duitang.com%2Fuploads%2Fitem%2F201507%2F14%2F20150714192130_PswuV.jpeg",
+        mp3: "https://static.babyhost.higgses.com/Fq4J__Jnj9Pq9WXDPqNMZ7NaOURo",
+        id: 201,
+        title: "测试自定义播放器",
+    }
+
+  }
+  onUnload(){
+    if(this.innerAudioContext){
+        this.innerAudioContext.destroy();
+    }
+    this.practicestatus=0;
+    this.ismove=true;
+  //销毁前重置数据
+    this.$apply();
+  }
+
+  onLoad (options) {
+    this.ismove=false;
+  }
+
+  onShow(){
+      let that=this;
+  }
+  methods = {
+
+    changing(){
+         this.ismove=true;
+    },
+    sliderChange(e) {
+        this.ismove=false;
+        var that = this;
+        //获取进度条百分比
+        var value = e.detail.value;
+        //设置全局百分比
+         that.methods.SETPLAYPERSENT(value);
+        var duration = AUDIOMANAGER.duration;
+        //根据进度条百分比及歌曲总时间，计算拖动位置的时间
+        var startTime = parseInt(value * duration / 100);
+        //更改播放进度
+        AUDIOMANAGER.seek(startTime);
+      },    
+      //播放示范
+      playDemo(e){
+        console.log(this.playObj)
+        console.log(e.currentTarget.dataset)
+          let that=this;
+          let src=e.currentTarget.dataset.mp3;
+          let title=e.currentTarget.dataset.title;
+          let poster=e.currentTarget.dataset.poster;
+          //给音频实例对象注入参数
+            AUDIOMANAGER.title=title;
+            AUDIOMANAGER.src=src;
+            AUDIOMANAGER.coverImgUrl=poster;
+            that.methods.SETPLAYURL(src);
+            that.methods.SETPLAYTITLE(title);
+            that.methods.SETPLAYPOSTER(poster);
+
+      },
+      //暂停
+      pauseDemo(){
+          AUDIOMANAGER.pause();
+          this.methods.SETPLAYISPLAY(false);
+      },
+
+  }
+}
+
+</script>
+<style lang="less">
+.view-page{
+    display: block;
+    width: 100vw;
+    height: 100vh;
+    position: relative;
+    .playDemo{
+         width: 97rpx;
+         height: 97rpx;
+         display: block;
+         position: fixed;
+         right: 30rpx;
+         bottom: 240rpx;
+         z-index: 1;
+    }
+    .highPlay{
+         bottom: 390rpx;
+    }
+    .control-content{
+      padding: 40rpx 0;
+      width: 100%;
+      position: fixed;
+      left: 0;
+      bottom: 0;
+      background: #fff;
+      text-align: center;
+      .slider{
+         position: absolute;
+        top: -16rpx;
+        width: 100%;
+        left: 0;   
+        slider{
+          margin: 0 0 0 0 !important;
+        } 
+      }
+      .jindu {
+        position: absolute;
+        top: 0rpx;
+        height: 5rpx;
+        left: 0;
+        background-color: #FF6524;
+      }
+
+      .jindu-back {
+        position: absolute;
+        top: 0rpx;
+        width: 100%;
+        height: 5rpx;
+        left: 0;
+        background-color:#fff;
+      }
+    }
+}
+</style>
+

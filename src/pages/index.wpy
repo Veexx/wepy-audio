@@ -1,0 +1,111 @@
+<template lang="wxml" minapp="wepy">
+    <view class='main-content'>
+        <movable-area style="width:100vw;height:100vh;">
+           <audio></audio>
+           <view  class="list-content">
+             <view class="item-list" wx:for="{{listData}}" wx:key="index" @tap="toDetail">
+                <image  mode="widthFix" class="item-img" src="../assets/test.png"  />
+                <view class="item-info">
+                  <text >Anna</text>
+                  <image class="click-right" src="../assets/right.png" />
+                </view>
+             </view>
+           </view>
+        </movable-area>
+    </view>
+</template>
+<script>
+import wepy from 'wepy';
+import {
+  SYSTEM_INFO,
+  SEL_CLASS_CODE
+} from '@/utils/constant';
+import util from '@/utils/utils'
+import Audio from '@/components/audio'
+import tip from '@/utils/tip'
+const AUDIOMANAGER = wx.getBackgroundAudioManager();
+export default class home extends wepy.page {
+  config = {
+    navigationBarTitleText: '首页',
+  }
+  components = {
+       audio:Audio
+  }  
+  data = {
+    scrollTop: 100,
+    windowHeight: 0,
+    listData:[1,2,3,4,5,6,7]
+  }
+  onHide(){
+    if(this.innerAudioContext){
+          this.innerAudioContext.destroy(); 
+      }    
+  }
+  onLoad(options) {
+    let that=this;
+
+    } 
+   watch = {
+
+  }
+
+  methods = {
+    toDetail(){
+         wx.navigateTo({ 
+           url: '/pages/detail'
+         });
+         
+    },
+    onShareAppMessage () {
+    var that = this;
+    return {
+      title: '首页首页',
+      path: '/pages/index',
+      success: function (res) {
+        wx.showToast({
+                title: '分享成功~',
+                icon: 'none',
+                duration: 2000
+        });
+      }
+    }
+  },
+  }
+
+}
+
+</script>
+<style lang="less" scoped>
+  .list-content{
+    display: block;
+     padding: 10rpx;
+    .item-list{
+      padding: 20rpx 20rpx 120rpx 20rpx;
+      margin: 20rpx;
+      display: flex;
+      border-radius:5rpx; 
+      box-shadow:0rpx 6rpx 12rpx 0px rgba(0,0,0,0.1);
+      .item-img{
+          width: 85rpx;
+          height: 85rpx;
+          border-radius:50%; 
+          margin-right: 20rpx;
+        }
+      .item-info{
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        text{
+          font-size: 30rpx;
+        }
+        .click-right{
+          width: 11rpx;
+          height: 22rpx;
+          display: block;
+
+        }
+      }
+    }
+  }
+</style>
